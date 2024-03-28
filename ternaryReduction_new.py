@@ -1,4 +1,5 @@
 from pymol import cmd, stored
+import sys
 
 """
 This new ternaryReduction method will initially try to classify a new incoming conformation into a cluster with 
@@ -13,7 +14,11 @@ def ternaryReduction_new(success_list: list, rmsd_cutoff=0.5, cluster_cutoff=5, 
     delete_set = set()
 
     # Clustering every single conformation according to their RMSD core
-    cluster_list = [[success_list[0]]]  # A nested list indicating the conformation in different clusters
+    try:
+        cluster_list = [[success_list[0]]]  # A nested list indicating the conformation in different clusters
+    except:
+        print("* There is no successful ternary complex.\n")
+
     for conf_i in success_list[1:len(success_list)]:
         print("\nChecking " + conf_i + "...")
 
