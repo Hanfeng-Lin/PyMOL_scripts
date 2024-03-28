@@ -2,7 +2,6 @@ from pymol import cmd, stored
 from protacAlign_new import protacAlign_new, getAlignAtoms
 from checkOverlapColor import checkOverlapColor
 import re, os
-from ternaryReduction import ternaryReduction
 from ternaryReduction_new import ternaryReduction_new
 from findHBondNumber import findHBondNumber
 from protac_bin import protac_bin, ternary_bin
@@ -20,7 +19,7 @@ Jin Wang Lab, Baylor College of Medicine
 
 
 @cmd.extend
-def autoProtac(targetProtein, E3ligase):
+def autoProtac(targetProtein, E3ligase, ternary_reduction=False):
     assert targetProtein in cmd.get_object_list(), \
         "no target protein detected in the workspace, check your spelling"
     assert E3ligase in cmd.get_object_list(), \
@@ -46,7 +45,8 @@ def autoProtac(targetProtein, E3ligase):
     protac_objects = cmd.get_object_list()
     protac_objects.remove(targetProtein)
     protac_objects.remove(E3ligase)
-    protac_name = re.match(r'^[A-Za-z0-9]*(?=_)', protac_objects[0]).group()  # Rename protac res_name according to object name
+    protac_name = re.match(r'^[A-Za-z0-9]*(?=_)',
+                           protac_objects[0]).group()  # Rename protac res_name according to object name
     print(protac_name)
     assert len(protac_name) <= 4, \
         "Please ensure your conformation library pdb file is within 4 characters. e.g. 4172.pdb"
@@ -85,7 +85,8 @@ def autoProtac(targetProtein, E3ligase):
                 current_ternary_count += 1
                 print("Productive Ternary Conformations detected so far: " + str(current_ternary_count))
         os.remove(protac_bins)
-        ternary_bin(protac_bins[0:-4])  # save the ternary complexes detected in this protac bin. [0:-4] removes extension name
+        ternary_bin(
+            protac_bins[0:-4])  # save the ternary complexes detected in this protac bin. [0:-4] removes extension name
 
     # Recall all the successful ternary complexes from bins
     ternary_bin_list = []
@@ -110,7 +111,8 @@ def autoProtac(targetProtein, E3ligase):
     success_list.remove(targetProtein)
     success_list.remove(E3ligase)
 
-    # ternaryReduction_new(success_list)
+    if ternary_reduction:
+        ternaryReduction_new(success_list)
 
     success_list = cmd.get_object_list()
     success_list.remove(targetProtein)
@@ -133,4 +135,3 @@ def autoProtac(targetProtein, E3ligase):
 
 cmd.auto_arg[0]['autoProtac'] = [cmd.object_sc, 'object', ',']
 cmd.auto_arg[1]['autoProtac'] = [cmd.object_sc, 'object', '']
-
