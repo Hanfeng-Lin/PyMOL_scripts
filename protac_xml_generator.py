@@ -3,13 +3,17 @@ from tkinter import filedialog, messagebox
 from rdkit import Chem
 from rdkit.Chem import AllChem
 from rdkit.Chem import Draw, rdDetermineBonds
+from rdkit.Chem.SaltRemover import SaltRemover
 from rdkit.Chem.Draw import rdMolDraw2D
 from io import BytesIO
 from PIL import Image, ImageTk
 from lxml import etree
-import re, io
+import re, io, os
 
 filename = ""
+xml_file_path = "PROTAC.xml"
+protac_xml = None
+
 
 
 class AtomSelectorApp:
@@ -28,50 +32,75 @@ class AtomSelectorApp:
         self.browse_button = tk.Button(master, text="Browse", command=self.browse_file)
         self.browse_button.grid(row=0, column=2)
 
-        self.generate_button = tk.Button(master, text="Generate XML", command=self.generate_xml)
-        self.generate_button.grid(row=8, column=2)
-        # Button to refresh image
-        self.refresh_button = tk.Button(master, text="Refresh Image", command=self.refresh_image)
-        self.refresh_button.grid(row=8, column=1, pady=10)
-
+        # Canvas for linker
         self.canvas = tk.Canvas(master, width=500, height=500)
-        self.canvas.grid(row=2, column=1)
+        self.canvas.grid(row=2, rowspan=2, column=1)
+        # Canvas for warhead
+        self.warhead_canvas = tk.Canvas(master, width=250, height=250)
+        self.warhead_canvas.grid(row=2, column=2)
+
+        # Canvas for E3 ligand image
+        self.e3ligand_canvas = tk.Canvas(master, width=250, height=250)
+        self.e3ligand_canvas.grid(row=3, column=2)
 
         # Label and entry for warhead atoms
         self.warhead_atoms_label = tk.Label(master, text="Warhead Atoms for alignment:")
-        self.warhead_atoms_label.grid(row=3, column=0, sticky="e")
+        self.warhead_atoms_label.grid(row=4, column=0, sticky="e")
         self.warhead_atoms_entry = tk.Entry(master)
-        self.warhead_atoms_entry.grid(row=3, column=1, padx=5, pady=5, sticky="we")
+        self.warhead_atoms_entry.grid(row=4, column=1, padx=5, pady=5, sticky="we")
 
         # Label and entry for bridge point warhead
         self.bridge_point_warhead_label = tk.Label(master, text="Bridge Point for Warhead:")
-        self.bridge_point_warhead_label.grid(row=4, column=0, sticky="e")
+        self.bridge_point_warhead_label.grid(row=5, column=0, sticky="e")
         self.bridge_point_warhead_entry = tk.Entry(master)
-        self.bridge_point_warhead_entry.grid(row=4, column=1, padx=5, pady=5, sticky="we")
+        self.bridge_point_warhead_entry.grid(row=5, column=1, padx=5, pady=5, sticky="we")
 
         # Label and entry for E3 atoms
         self.E3_atoms_label = tk.Label(master, text="E3 Atoms for alignment:")
-        self.E3_atoms_label.grid(row=5, column=0, sticky="e")
+        self.E3_atoms_label.grid(row=6, column=0, sticky="e")
         self.E3_atoms_entry = tk.Entry(master)
-        self.E3_atoms_entry.grid(row=5, column=1, padx=5, pady=5, sticky="we")
+        self.E3_atoms_entry.grid(row=6, column=1, padx=5, pady=5, sticky="we")
 
         # Label and entry for bridge point E3 ligand
         self.bridge_point_E3ligand_label = tk.Label(master, text="Bridge Point for E3 Ligand:")
-        self.bridge_point_E3ligand_label.grid(row=6, column=0, sticky="e")
+        self.bridge_point_E3ligand_label.grid(row=7, column=0, sticky="e")
         self.bridge_point_E3ligand_entry = tk.Entry(master)
-        self.bridge_point_E3ligand_entry.grid(row=6, column=1, padx=5, pady=5, sticky="we")
+        self.bridge_point_E3ligand_entry.grid(row=7, column=1, padx=5, pady=5, sticky="we")
 
         # Label and entry for useless atoms
         self.useless_atoms_label = tk.Label(master, text="Useless Atoms to be deleted when bridging:")
-        self.useless_atoms_label.grid(row=7, column=0, sticky="e")
+        self.useless_atoms_label.grid(row=8, column=0, sticky="e")
         self.useless_atoms_entry = tk.Entry(master)
-        self.useless_atoms_entry.grid(row=7, column=1, padx=5, pady=5, sticky="we")
+        self.useless_atoms_entry.grid(row=8, column=1, padx=5, pady=5, sticky="we")
+
+        self.generate_button = tk.Button(master, text="Generate XML", command=self.generate_xml)
+        self.generate_button.grid(row=9, column=2)
+        # Button to refresh image
+        self.refresh_button = tk.Button(master, text="Refresh Image", command=self.refresh_image)
+        self.refresh_button.grid(row=9, column=1, pady=10)
 
         # Text widget to display XML output
         self.xml_output_label = tk.Label(master, text="XML Output:")
-        self.xml_output_label.grid(row=9, column=0, sticky="e")
+        self.xml_output_label.grid(row=10, column=0, sticky="e")
         self.xml_output_text = tk.Text(master, width=60, height=10)
-        self.xml_output_text.grid(row=9, column=1, columnspan=2, padx=5, pady=5, sticky="we")
+        self.xml_output_text.grid(row=10, column=1, columnspan=2, padx=5, pady=5, sticky="we")
+
+        # Create dropdown menu for warhead ligands
+        self.warhead_var = tk.StringVar()
+        self.warhead_var.set("Select Warhead")
+        self.warhead_var.trace("w", self.handle_selection)
+        self.warhead_dropdown = tk.OptionMenu(master, self.warhead_var, "Select Warhead")
+        self.warhead_dropdown.grid(row=0, column=5, padx=5, pady=5)
+
+        # Create dropdown menu for E3 ligands
+        self.e3ligand_var = tk.StringVar()
+        self.e3ligand_var.set("Select E3 Ligand")
+        self.e3ligand_var.trace("w", self.handle_selection)
+        self.e3ligand_dropdown = tk.OptionMenu(master, self.e3ligand_var, "Select E3 Ligand")
+        self.e3ligand_dropdown.grid(row=0, column=6, padx=5, pady=5)
+
+        # Populate dropdown menus
+        self.populate_dropdown()
 
         self.mol = None
 
@@ -104,23 +133,14 @@ class AtomSelectorApp:
             img = self.get_molecule_image(mol)
             if img:
                 print("Image size:", img.width(), "x", img.height())
-                self.display_image(img)
+                self.display_image(img, self.canvas)
             else:
                 print("Failed to create image")
         else:
             messagebox.showerror("Error", "Failed to load molecule from PDB file.")
 
-    def get_molecule_image(self, mol, highlight_atom_map=None):
-        '''
-        mol_img = Draw.MolToImage(mol, size=(500, 500), highlightAtoms=highlight_atoms)
-        if mol_img:
-            print("Molecule image created successfully")
-            return ImageTk.PhotoImage(mol_img)
-        else:
-            print("Failed to create molecule image")
-            return None
-        '''
-        drawer = rdMolDraw2D.MolDraw2DCairo(500, 500)  # Adjust the size as needed
+    def get_molecule_image(self, mol, size=500, highlight_atom_map=None):
+        drawer = rdMolDraw2D.MolDraw2DCairo(int(size), int(size))  # Adjust the size as needed
 
         # Draw the molecule
         if highlight_atom_map:
@@ -136,10 +156,10 @@ class AtomSelectorApp:
         photo_image = ImageTk.PhotoImage(pil_img)
         return photo_image
 
-    def display_image(self, img):
+    def display_image(self, img, canvas):
         self.canvas.delete("all")
         # Draw the image
-        self.image_label = tk.Label(self.canvas, image=img)
+        self.image_label = tk.Label(canvas, image=img)
         self.image_label.image = img  # Keep a reference to avoid garbage collection
         self.image_label.place(x=0, y=0, anchor=tk.NW)
 
@@ -211,8 +231,8 @@ class AtomSelectorApp:
                 highlight_atom_map[atom_idx] = [rgb_tuple]
 
         # Generate molecule image with highlighted atoms
-        img = self.get_molecule_image(mol, highlight_atom_map)
-        self.display_image(img)
+        img = self.get_molecule_image(mol, highlight_atom_map=highlight_atom_map)
+        self.display_image(img, self.canvas)
 
     def generate_xml(self):
         if self.mol is not None:
@@ -270,6 +290,103 @@ class AtomSelectorApp:
         self.xml_output_text.delete(1.0, tk.END)
         self.xml_output_text.insert(tk.END, xml_string)
 
+    def populate_dropdown(self):
+        if not os.path.exists(xml_file_path):
+            messagebox.showerror("Error", "XML file 'PROTAC.xml' not found in the current directory.")
+            return
+        try:
+            global protac_xml
+            protac_xml = etree.parse(xml_file_path)
+            print("Parsing successful")
+        except etree.XMLSyntaxError:
+            messagebox.showerror("Error", "Failed to parse XML file.")
+            return
+
+        warhead_options = []
+        e3ligand_options = []
+        # Extract warhead ligand titles
+        warhead_proteins = protac_xml.xpath('//target_protein/protein')
+        for protein in warhead_proteins:
+            protein_title = protein.get('title')
+            ligands = protein.xpath('ligand')
+            for ligand in ligands:
+                ligand_title = ligand.get('title')
+                warhead_options.append(protein_title + '-' + ligand_title)
+
+        # Extract E3 ligand titles
+        e3ligand_proteins = protac_xml.xpath('//E3_protein/protein')
+        for protein in e3ligand_proteins:
+            protein_title = protein.get('title')
+            ligands = protein.xpath('ligand')
+            for ligand in ligands:
+                ligand_title = ligand.get('title')
+                e3ligand_options.append(protein_title + '-' + ligand_title)
+
+        print(warhead_options, e3ligand_options)
+
+        self.warhead_dropdown['menu'].delete(0, tk.END)
+        self.e3ligand_dropdown['menu'].delete(0, tk.END)
+        for ligand in warhead_options:
+            self.warhead_dropdown['menu'].add_command(label=ligand, command=tk._setit(self.warhead_var, ligand))
+        for ligand in e3ligand_options:
+            self.e3ligand_dropdown['menu'].add_command(label=ligand, command=tk._setit(self.e3ligand_var, ligand))
+
+    def process_ligand(self, selected_ligand, pdb_path, canvas):
+        if selected_ligand.startswith("Select"):
+            return None
+
+        hetatm_lines = []
+        pdb_atom_names = []
+
+        with open(pdb_path+selected_ligand+".pdb", 'r') as f:
+            for line in f:
+                if line.startswith('HETATM'):
+                    if line[12:16].strip() != "ZN":
+                        hetatm_lines.append(line)
+                        # Extract the atom name from columns 13-16
+                        pdb_atom_names.append(line[12:16].strip())
+        print(pdb_atom_names)
+
+        pdb_block = ''.join(hetatm_lines)
+        mol = Chem.MolFromPDBBlock(pdb_block, removeHs=False)
+
+        if mol:
+            remover = SaltRemover(defnData="[Zn]")
+            mol = remover.StripMol(mol, dontRemoveEverything=True)
+
+            # Label atoms with PDB atom names
+            for i, atom in enumerate(mol.GetAtoms()):
+                atom.SetProp("atomNote", pdb_atom_names[i])
+
+            # Process the ligand and assign bond orders from SMILES template or guess if SMILES is not available
+            ligand_title = selected_ligand.split('-')[1]
+            SMILES = protac_xml.xpath(f"//ligand[@title='{ligand_title}']/SMILES")
+            if SMILES:
+                SMILES_template = Chem.MolFromSmiles(SMILES[0].text)
+                mol = AllChem.AssignBondOrdersFromTemplate(SMILES_template, mol)
+            else:
+                rdDetermineBonds.DetermineBonds(mol, charge=0)
+                Chem.SanitizeMol(mol)
+                mol = Chem.RemoveHs(mol)
+
+            # Compute 2D coordinates
+            AllChem.Compute2DCoords(mol)
+
+            # Display the image on the canvas
+            img = self.get_molecule_image(mol, size=250)
+            self.display_image(img, canvas)
+
+            return mol
+        else:
+            messagebox.showerror("Error", f"Failed to load ligand from {pdb_path}")
+            return None
+
+    def handle_selection(self, *args):
+        selected_warhead = self.warhead_var.get()
+        selected_e3ligand = self.e3ligand_var.get()
+
+        warhead_mol = self.process_ligand(selected_warhead, "./warhead_ligands/", self.warhead_canvas)
+        e3ligand_mol = self.process_ligand(selected_e3ligand, "./E3_ligands/", self.e3ligand_canvas)
 
 def main():
     root = tk.Tk()

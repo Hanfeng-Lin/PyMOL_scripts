@@ -32,6 +32,7 @@
         <protein title="BRD4BD2">
             <ligand title="JQ1">
                 JQ1 Modeled by substituting BRD2BD2 in 3ONI with BRD4BD2 from 5T35
+                <SMILES>Cc1c(C(c2ccc(Cl)cc2)=N[C@@H](C)c3nnc(C)n34)c4sc1C</SMILES>
                 <bridge_point>CBC</bridge_point>
                 <align_atoms>
                     <atom>CAM</atom>
@@ -58,6 +59,7 @@
         <protein title="SMARCA2">
             <ligand title="FWZ">
                 from 6HAX
+                <SMILES>CN1CCN(c2c(N)nnc(c3c(O)cccc3)c2)CC1</SMILES>
                 <bridge_point>N41</bridge_point>
                 <align_atoms>
                     <atom>C42</atom>
@@ -72,6 +74,7 @@
         <protein title="BTK">
             <ligand title="PS2">
                 from 5p9i aligned docking
+                <SMILES>CN(CC1)CCN1C(C=C2)=CC=C2NC3=NC(OC4=CC=CC=C4)=CC=N3</SMILES>
                 <bridge_point>C5</bridge_point>
                 <align_atoms>
                     <atom>C1</atom>
@@ -94,8 +97,8 @@
     <E3_protein>
         <protein title="VHL">
             <ligand title="4YY">
-                <atom_number>36</atom_number>
-                <atom_number_hydrogen>69</atom_number_hydrogen>
+                Linker exit vector from tail
+                <SMILES>Cc1ncsc1c2ccc(CNC([C@@H]3C[C@@H](O)CN3C([C@@H](NC(C)=O)C(C)(C)C)=O)=O)cc2</SMILES>
                 <bridge_point>CAY</bridge_point>
                 <align_atoms>
                     <atom>NAV</atom>
@@ -128,6 +131,8 @@
                 </overlapping_atoms>
             </ligand>
             <ligand title="4YYA">
+                linker exit vector from middle benzene ring
+                <SMILES>Cc1ncsc1c2ccc(CNC([C@@H]3C[C@@H](O)CN3C([C@@H](NC(C4(F)CC4)=O)C(C)(C)C)=O)=O)cc2</SMILES>
                 <bridge_point>CAJ</bridge_point>
                 <align_atoms>
                     <atom>CAJ</atom>
@@ -141,6 +146,7 @@
         <protein title="CRBN">
             <ligand title="Y70">
                 Pomalidomide + CRBN 8D81
+                <SMILES>c1cc2c(c(c1)N)C(=O)N(C2=O)[C@H]3CCC(=O)NC3=O</SMILES>
                 <bridge_point>C6</bridge_point>
                 <align_atoms>
                     <atom>C2</atom>
