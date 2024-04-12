@@ -13,6 +13,8 @@ To use this script in PyMOL, make sure there are only PROTAC conformations in th
 PyMOL> run autoProtac.py
 PyMOL> autoProtac targetProteinObject, E3LigaseObject
 
+Recommend to turn on ternary_reduction=True if modeling for flexible linker.
+
 Credit: Hanfeng Lin
 Jin Wang Lab, Baylor College of Medicine
 '''
