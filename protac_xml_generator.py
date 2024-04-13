@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import filedialog, messagebox
 from rdkit import Chem
-from rdkit.Chem import AllChem
+from rdkit.Chem import AllChem, rdMolTransforms
 from rdkit.Chem import Draw, rdDetermineBonds
 from rdkit.Chem.SaltRemover import SaltRemover
 from rdkit.Chem.Draw import rdMolDraw2D
@@ -9,6 +9,8 @@ from io import BytesIO
 from PIL import Image, ImageTk
 from lxml import etree
 import re, io, os
+import numpy as np
+
 
 filename = ""
 xml_file_path = "PROTAC.xml"
@@ -34,14 +36,21 @@ class AtomSelectorApp:
 
         # Canvas for linker
         self.canvas = tk.Canvas(master, width=500, height=500)
-        self.canvas.grid(row=2, rowspan=2, column=1)
+        self.canvas.grid(row=2, rowspan=2, column=1, columnspan=2)
         # Canvas for warhead
-        self.warhead_canvas = tk.Canvas(master, width=250, height=250)
-        self.warhead_canvas.grid(row=2, column=2)
-
+        self.warhead_canvas = tk.Canvas(master, width=400, height=400)
+        self.warhead_canvas.grid(row=2, column=5)
         # Canvas for E3 ligand image
-        self.e3ligand_canvas = tk.Canvas(master, width=250, height=250)
-        self.e3ligand_canvas.grid(row=3, column=2)
+        self.e3ligand_canvas = tk.Canvas(master, width=400, height=400)
+        self.e3ligand_canvas.grid(row=2, column=6)
+
+        # Rotate button
+        self.rotate_button = tk.Button(master, text="Rotate 90", command=self.rotate_image)
+        self.rotate_button.grid(row=3, column=1, sticky="e", padx=5)
+
+        # Flip button
+        self.flip_button = tk.Button(master, text="Flip", command=self.flip_image)
+        self.flip_button.grid(row=3, column=2, sticky="w", padx=5)
 
         # Label and entry for warhead atoms
         self.warhead_atoms_label = tk.Label(master, text="Warhead Atoms for alignment:")
@@ -103,6 +112,7 @@ class AtomSelectorApp:
         self.populate_dropdown()
 
         self.mol = None
+        self.linker_highlight_map = {}
 
     def browse_file(self):
         file_path = filedialog.askopenfilename(filetypes=[("PDB Files", "*.pdb")])
@@ -173,11 +183,12 @@ class AtomSelectorApp:
         useless_atoms = self.useless_atoms_entry.get().split()
 
         # Read PDB file and create molecule object
-        mol = Chem.MolFromPDBFile(pdb_file_path, removeHs=False)
-        rdDetermineBonds.DetermineBonds(mol, charge=0)
-        Chem.SanitizeMol(mol)
-        mol = Chem.RemoveHs(mol)
-        AllChem.Compute2DCoords(mol)
+        # mol = Chem.MolFromPDBFile(pdb_file_path, removeHs=False)
+        # rdDetermineBonds.DetermineBonds(mol, charge=0)
+        # Chem.SanitizeMol(mol)
+        # mol = Chem.RemoveHs(mol)
+        # AllChem.Compute2DCoords(mol)
+        mol = self.mol
 
         mol.SetProp("_displayOptions", '{"kekulize": true, "addStereoAnnotation": true}')
         for atom in mol.GetAtoms():
@@ -188,50 +199,38 @@ class AtomSelectorApp:
 
         # Highlight atoms
         highlight_atom_map = {}
-        for atom in warhead_atoms:
-            atom = ''.join(re.findall(r'\d+', atom))  # extract atom index 12 from C12
-            print(mol.GetAtomWithIdx(int(atom) - 1).GetSymbol() + atom)
-            atom_idx = mol.GetAtomWithIdx(int(atom) - 1).GetIdx()
-            rgb_tuple = (1.0, 0.5, 0.5)
-            if atom_idx in highlight_atom_map:
-                highlight_atom_map[atom_idx].append(rgb_tuple)
-            else:
-                highlight_atom_map[atom_idx] = [rgb_tuple]
-        for atom in bridge_point_warhead:
-            atom = ''.join(re.findall(r'\d+', atom))  # extract atom index 12 from C12
-            atom_idx = mol.GetAtomWithIdx(int(atom) - 1).GetIdx()
-            rgb_tuple = (1.0, 0.5, 1.0)
-            if atom_idx in highlight_atom_map:
-                highlight_atom_map[atom_idx].append(rgb_tuple)
-            else:
-                highlight_atom_map[atom_idx] = [rgb_tuple]
-        for atom in E3_atoms:
-            atom = ''.join(re.findall(r'\d+', atom))  # extract atom index 12 from C12
-            atom_idx = mol.GetAtomWithIdx(int(atom) - 1).GetIdx()
-            rgb_tuple = (0.5, 1.0, 0.5)
-            if atom_idx in highlight_atom_map:
-                highlight_atom_map[atom_idx].append(rgb_tuple)
-            else:
-                highlight_atom_map[atom_idx] = [rgb_tuple]
-        for atom in bridge_point_E3ligand:
-            atom = ''.join(re.findall(r'\d+', atom))  # extract atom index 12 from C12
-            atom_idx = mol.GetAtomWithIdx(int(atom) - 1).GetIdx()
-            rgb_tuple = (1.0, 0.5, 1.0)
-            if atom_idx in highlight_atom_map:
-                highlight_atom_map[atom_idx].append(rgb_tuple)
-            else:
-                highlight_atom_map[atom_idx] = [rgb_tuple]
-        for atom in useless_atoms:
-            atom = ''.join(re.findall(r'\d+', atom))  # extract atom index 12 from C12
-            atom_idx = mol.GetAtomWithIdx(int(atom) - 1).GetIdx()
-            rgb_tuple = (1.0, 1.0, 0.8)
-            if atom_idx in highlight_atom_map:
-                highlight_atom_map[atom_idx].append(rgb_tuple)
-            else:
-                highlight_atom_map[atom_idx] = [rgb_tuple]
+
+        def add_atoms_to_highlight_map(atom_indices, rgb_tuple):
+            for atom in atom_indices:
+                atom_index = int(''.join(re.findall(r'\d+', atom))) - 1
+                if 0 <= atom_index < mol.GetNumAtoms():
+                    if atom_index in highlight_atom_map:
+                        highlight_atom_map[atom_index].append(rgb_tuple)
+                    else:
+                        highlight_atom_map[atom_index] = [rgb_tuple]
+
+        add_atoms_to_highlight_map(warhead_atoms, (1.0, 0.5, 0.5))
+        add_atoms_to_highlight_map(bridge_point_warhead, (1.0, 0.5, 1.0))
+        add_atoms_to_highlight_map(E3_atoms, (0.5, 1.0, 0.5))
+        add_atoms_to_highlight_map(bridge_point_E3ligand, (1.0, 0.5, 1.0))
+        add_atoms_to_highlight_map(useless_atoms, (1.0, 1.0, 0.8))
+
+        self.linker_highlight_map = highlight_atom_map
 
         # Generate molecule image with highlighted atoms
         img = self.get_molecule_image(mol, highlight_atom_map=highlight_atom_map)
+        self.display_image(img, self.canvas)
+
+    def rotate_image(self):
+        # Rotate the RDKit molecule
+        Chem.rdMolTransforms.TransformConformer(self.mol.GetConformer(), np.array([[0., 1., 0., 0.], [-1., 0., 0., 0.], [0., 0., 1., 0.], [0., 0., 0., 1.]]))
+        img = self.get_molecule_image(self.mol, highlight_atom_map=self.linker_highlight_map)
+        self.display_image(img, self.canvas)
+
+    def flip_image(self):
+        # Flip the RDKit molecule
+        Chem.rdMolTransforms.TransformConformer(self.mol.GetConformer(), np.array([[-1., 0., 0., 0.], [0., 1., 0., 0.], [0., 0., -1., 0.], [0., 0., 0., 1.]]))
+        img = self.get_molecule_image(self.mol, highlight_atom_map=self.linker_highlight_map)
         self.display_image(img, self.canvas)
 
     def generate_xml(self):
@@ -372,8 +371,51 @@ class AtomSelectorApp:
             # Compute 2D coordinates
             AllChem.Compute2DCoords(mol)
 
+            # Get xml atom names
+            bridge_point = protac_xml.xpath(f"//ligand[@title='{ligand_title}']/bridge_point")
+            bridge_point_name = [atom.text for atom in bridge_point]
+            align_atoms = protac_xml.xpath(f"//ligand[@title='{ligand_title}']/align_atoms/atom")
+            align_atom_names = [atom.text for atom in align_atoms]
+            overlapping_atoms = protac_xml.xpath(f"//ligand[@title='{ligand_title}']/overlapping_atoms/atom")
+            overlapping_atoms_names = [atom.text for atom in overlapping_atoms]
+            print(bridge_point_name, align_atom_names, overlapping_atoms_names)
+
+            # Convert atom name back to atom ID
+
+            def atom_name_to_id(mol, atom_names):
+                atom_ids = []
+                for atom_name in atom_names:
+                    found = False
+                    for atom in mol.GetAtoms():
+                        if atom.GetProp("atomNote") == atom_name:
+                            atom_ids.append(atom.GetIdx())
+                            found = True
+                            break
+                    if not found:
+                        print(f"Atom with name '{atom_name}' not found in the molecule")
+                        atom_ids.append(None)
+                return atom_ids
+
+            bridge_point_id = atom_name_to_id(mol, bridge_point_name)
+            align_atom_ids = atom_name_to_id(mol, align_atom_names)
+            overlapping_atom_ids = atom_name_to_id(mol,overlapping_atoms_names)
+            print(bridge_point_id,align_atom_ids,overlapping_atom_ids)
+
+            highlight_atom_map = {}
+
+            def add_atoms_to_highlight_map(atom_indices, rgb_tuple):
+                for atom in atom_indices:
+                    if atom in highlight_atom_map:
+                        highlight_atom_map[atom].append(rgb_tuple)
+                    else:
+                        highlight_atom_map[atom] = [rgb_tuple]
+
+            add_atoms_to_highlight_map(bridge_point_id, (1.0, 0.5, 1.0))
+            add_atoms_to_highlight_map(align_atom_ids, (0.5, 1.0, 0.5))
+            add_atoms_to_highlight_map(overlapping_atom_ids, (1.0, 1.0, 0.8))
+
             # Display the image on the canvas
-            img = self.get_molecule_image(mol, size=250)
+            img = self.get_molecule_image(mol, size=400, highlight_atom_map=highlight_atom_map)
             self.display_image(img, canvas)
 
             return mol
