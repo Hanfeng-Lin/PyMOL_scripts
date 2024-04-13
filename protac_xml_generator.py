@@ -11,12 +11,11 @@ from lxml import etree
 import re, io, os
 import numpy as np
 
-
 filename = ""
 xml_file_path = "PROTAC.xml"
 protac_xml = None
-
-
+drawOptions = rdMolDraw2D.MolDrawOptions()
+drawOptions.annotationFontScale=1
 
 class AtomSelectorApp:
     def __init__(self, master):
@@ -43,6 +42,17 @@ class AtomSelectorApp:
         # Canvas for E3 ligand image
         self.e3ligand_canvas = tk.Canvas(master, width=400, height=400)
         self.e3ligand_canvas.grid(row=2, column=6)
+
+        # Text widget to display ligand atoms
+        self.warhead_ligand_output_label = tk.Label(master, text="Warhead ligand")
+        self.warhead_ligand_output_label.grid(row=3, column=5)
+        self.warhead_ligand_output_text = tk.Text(master, width=40, height=10)
+        self.warhead_ligand_output_text.grid(row=4, column=5, rowspan=5, padx=5, pady=5, sticky="we")
+
+        self.e3_ligand_output_label = tk.Label(master, text="E3 ligand")
+        self.e3_ligand_output_label.grid(row=3, column=6)
+        self.e3_ligand_output_text = tk.Text(master, width=40, height=10)
+        self.e3_ligand_output_text.grid(row=4, column=6, rowspan=5, padx=5, pady=5, sticky="we")
 
         # Rotate button
         self.rotate_button = tk.Button(master, text="Rotate 90", command=self.rotate_image)
@@ -149,12 +159,13 @@ class AtomSelectorApp:
         else:
             messagebox.showerror("Error", "Failed to load molecule from PDB file.")
 
-    def get_molecule_image(self, mol, size=500, highlight_atom_map=None):
+    def get_molecule_image(self, mol, size=500, highlight_atom_map=None, highlight_radii=None):
         drawer = rdMolDraw2D.MolDraw2DCairo(int(size), int(size))  # Adjust the size as needed
+        drawer.SetDrawOptions(drawOptions)
 
         # Draw the molecule
         if highlight_atom_map:
-            drawer.DrawMoleculeWithHighlights(mol, "", highlight_atom_map, {}, {}, {})
+            drawer.DrawMoleculeWithHighlights(mol, "", highlight_atom_map, {}, highlight_radii, {})
         else:
             drawer.DrawMolecule(mol)
         drawer.FinishDrawing()
@@ -182,12 +193,6 @@ class AtomSelectorApp:
         bridge_point_E3ligand = self.bridge_point_E3ligand_entry.get().split()
         useless_atoms = self.useless_atoms_entry.get().split()
 
-        # Read PDB file and create molecule object
-        # mol = Chem.MolFromPDBFile(pdb_file_path, removeHs=False)
-        # rdDetermineBonds.DetermineBonds(mol, charge=0)
-        # Chem.SanitizeMol(mol)
-        # mol = Chem.RemoveHs(mol)
-        # AllChem.Compute2DCoords(mol)
         mol = self.mol
 
         mol.SetProp("_displayOptions", '{"kekulize": true, "addStereoAnnotation": true}')
@@ -199,6 +204,7 @@ class AtomSelectorApp:
 
         # Highlight atoms
         highlight_atom_map = {}
+        highlight_radii = {}
 
         def add_atoms_to_highlight_map(atom_indices, rgb_tuple):
             for atom in atom_indices:
@@ -216,20 +222,24 @@ class AtomSelectorApp:
         add_atoms_to_highlight_map(useless_atoms, (1.0, 1.0, 0.8))
 
         self.linker_highlight_map = highlight_atom_map
+        for key in highlight_atom_map:
+            highlight_radii[key]=0.5
 
         # Generate molecule image with highlighted atoms
-        img = self.get_molecule_image(mol, highlight_atom_map=highlight_atom_map)
+        img = self.get_molecule_image(mol, highlight_atom_map=highlight_atom_map, highlight_radii=highlight_radii)
         self.display_image(img, self.canvas)
 
     def rotate_image(self):
         # Rotate the RDKit molecule
-        Chem.rdMolTransforms.TransformConformer(self.mol.GetConformer(), np.array([[0., 1., 0., 0.], [-1., 0., 0., 0.], [0., 0., 1., 0.], [0., 0., 0., 1.]]))
+        Chem.rdMolTransforms.TransformConformer(self.mol.GetConformer(), np.array(
+            [[0., 1., 0., 0.], [-1., 0., 0., 0.], [0., 0., 1., 0.], [0., 0., 0., 1.]]))
         img = self.get_molecule_image(self.mol, highlight_atom_map=self.linker_highlight_map)
         self.display_image(img, self.canvas)
 
     def flip_image(self):
         # Flip the RDKit molecule
-        Chem.rdMolTransforms.TransformConformer(self.mol.GetConformer(), np.array([[-1., 0., 0., 0.], [0., 1., 0., 0.], [0., 0., -1., 0.], [0., 0., 0., 1.]]))
+        Chem.rdMolTransforms.TransformConformer(self.mol.GetConformer(), np.array(
+            [[-1., 0., 0., 0.], [0., 1., 0., 0.], [0., 0., -1., 0.], [0., 0., 0., 1.]]))
         img = self.get_molecule_image(self.mol, highlight_atom_map=self.linker_highlight_map)
         self.display_image(img, self.canvas)
 
@@ -330,14 +340,14 @@ class AtomSelectorApp:
         for ligand in e3ligand_options:
             self.e3ligand_dropdown['menu'].add_command(label=ligand, command=tk._setit(self.e3ligand_var, ligand))
 
-    def process_ligand(self, selected_ligand, pdb_path, canvas):
+    def process_ligand(self, selected_ligand, pdb_path, canvas, output_textbox):
         if selected_ligand.startswith("Select"):
             return None
 
         hetatm_lines = []
         pdb_atom_names = []
 
-        with open(pdb_path+selected_ligand+".pdb", 'r') as f:
+        with open(pdb_path + selected_ligand + ".pdb", 'r') as f:
             for line in f:
                 if line.startswith('HETATM'):
                     if line[12:16].strip() != "ZN":
@@ -393,13 +403,21 @@ class AtomSelectorApp:
                             break
                     if not found:
                         print(f"Atom with name '{atom_name}' not found in the molecule")
-                        atom_ids.append(None)
                 return atom_ids
 
             bridge_point_id = atom_name_to_id(mol, bridge_point_name)
             align_atom_ids = atom_name_to_id(mol, align_atom_names)
-            overlapping_atom_ids = atom_name_to_id(mol,overlapping_atoms_names)
-            print(bridge_point_id,align_atom_ids,overlapping_atom_ids)
+            overlapping_atom_ids = atom_name_to_id(mol, overlapping_atoms_names)
+            print(bridge_point_id, align_atom_ids, overlapping_atom_ids)
+
+            output_textbox.delete(1.0, tk.END)
+            output_textbox.insert(tk.END, f"bridge_point: {str(bridge_point_name)}\n", "pink")
+            output_textbox.insert(tk.END, f"align_atoms: {str(align_atom_names)}\n", "green")
+            output_textbox.insert(tk.END, f"overlapping_atoms: {str(overlapping_atoms_names)}", "yellow")
+
+            output_textbox.tag_configure("pink", background="#ff7fff")
+            output_textbox.tag_configure("green", background="#7fff7f")
+            output_textbox.tag_configure("yellow", background="#ffffcc")
 
             highlight_atom_map = {}
 
@@ -414,8 +432,13 @@ class AtomSelectorApp:
             add_atoms_to_highlight_map(align_atom_ids, (0.5, 1.0, 0.5))
             add_atoms_to_highlight_map(overlapping_atom_ids, (1.0, 1.0, 0.8))
 
-            # Display the image on the canvas
-            img = self.get_molecule_image(mol, size=400, highlight_atom_map=highlight_atom_map)
+            highlight_radii = {}
+            for key in highlight_atom_map:
+                highlight_radii[key] = 0.5
+
+                # Display the image on the canvas
+            img = self.get_molecule_image(mol, size=400, highlight_atom_map=highlight_atom_map,
+                                          highlight_radii=highlight_radii)
             self.display_image(img, canvas)
 
             return mol
@@ -427,8 +450,11 @@ class AtomSelectorApp:
         selected_warhead = self.warhead_var.get()
         selected_e3ligand = self.e3ligand_var.get()
 
-        warhead_mol = self.process_ligand(selected_warhead, "./warhead_ligands/", self.warhead_canvas)
-        e3ligand_mol = self.process_ligand(selected_e3ligand, "./E3_ligands/", self.e3ligand_canvas)
+        warhead_mol = self.process_ligand(selected_warhead, "./warhead_ligands/", self.warhead_canvas,
+                                          self.warhead_ligand_output_text)
+        e3ligand_mol = self.process_ligand(selected_e3ligand, "./E3_ligands/", self.e3ligand_canvas,
+                                           self.e3_ligand_output_text)
+
 
 def main():
     root = tk.Tk()
