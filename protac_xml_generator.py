@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import filedialog, messagebox
 from rdkit import Chem
-from rdkit.Chem import AllChem, rdMolTransforms
+from rdkit.Chem import AllChem, rdMolTransforms, rdFMCS
 from rdkit.Chem import Draw, rdDetermineBonds
 from rdkit.Chem.SaltRemover import SaltRemover
 from rdkit.Chem.Draw import rdMolDraw2D
@@ -15,7 +15,8 @@ filename = ""
 xml_file_path = "PROTAC.xml"
 protac_xml = None
 drawOptions = rdMolDraw2D.MolDrawOptions()
-drawOptions.annotationFontScale=1
+drawOptions.annotationFontScale = 1
+
 
 class AtomSelectorApp:
     def __init__(self, master):
@@ -53,6 +54,10 @@ class AtomSelectorApp:
         self.e3_ligand_output_label.grid(row=3, column=6)
         self.e3_ligand_output_text = tk.Text(master, width=40, height=10)
         self.e3_ligand_output_text.grid(row=4, column=6, rowspan=5, padx=5, pady=5, sticky="we")
+
+        # Align button
+        self.rotate_button = tk.Button(master, text="Try alignment", command=self.align_molecules)
+        self.rotate_button.grid(row=3, column=0, sticky="e", padx=5)
 
         # Rotate button
         self.rotate_button = tk.Button(master, text="Rotate 90", command=self.rotate_image)
@@ -122,12 +127,17 @@ class AtomSelectorApp:
         self.populate_dropdown()
 
         self.mol = None
+        self.warhead_mol = None
+        self.warhead_bridge_point_id, self.warhead_align_atom_ids, self.warhead_overlapping_atom_ids = None, None, None
+        self.e3_mol = None
+        self.e3_bridge_point_id, self.e3_align_atom_ids, self.e3_overlapping_atom_ids = None, None, None
         self.linker_highlight_map = {}
+        self.linker_highlight_radii = {}
 
     def browse_file(self):
         file_path = filedialog.askopenfilename(filetypes=[("PDB Files", "*.pdb")])
         global filename
-        filename = file_path.split('/')[-1]
+        filename = file_path.split('/')[-1][:-4]
         if file_path:
             self.file_path_entry.delete(0, tk.END)
             self.file_path_entry.insert(0, file_path)
@@ -222,8 +232,10 @@ class AtomSelectorApp:
         add_atoms_to_highlight_map(useless_atoms, (1.0, 1.0, 0.8))
 
         self.linker_highlight_map = highlight_atom_map
+        # Define highlight radii
         for key in highlight_atom_map:
-            highlight_radii[key]=0.5
+            highlight_radii[key] = 0.5
+        self.linker_highlight_radii = highlight_radii
 
         # Generate molecule image with highlighted atoms
         img = self.get_molecule_image(mol, highlight_atom_map=highlight_atom_map, highlight_radii=highlight_radii)
@@ -233,14 +245,14 @@ class AtomSelectorApp:
         # Rotate the RDKit molecule
         Chem.rdMolTransforms.TransformConformer(self.mol.GetConformer(), np.array(
             [[0., 1., 0., 0.], [-1., 0., 0., 0.], [0., 0., 1., 0.], [0., 0., 0., 1.]]))
-        img = self.get_molecule_image(self.mol, highlight_atom_map=self.linker_highlight_map)
+        img = self.get_molecule_image(self.mol, highlight_atom_map=self.linker_highlight_map, highlight_radii=self.linker_highlight_radii)
         self.display_image(img, self.canvas)
 
     def flip_image(self):
         # Flip the RDKit molecule
         Chem.rdMolTransforms.TransformConformer(self.mol.GetConformer(), np.array(
             [[-1., 0., 0., 0.], [0., 1., 0., 0.], [0., 0., -1., 0.], [0., 0., 0., 1.]]))
-        img = self.get_molecule_image(self.mol, highlight_atom_map=self.linker_highlight_map)
+        img = self.get_molecule_image(self.mol, highlight_atom_map=self.linker_highlight_map, highlight_radii=self.linker_highlight_radii)
         self.display_image(img, self.canvas)
 
     def generate_xml(self):
@@ -340,7 +352,7 @@ class AtomSelectorApp:
         for ligand in e3ligand_options:
             self.e3ligand_dropdown['menu'].add_command(label=ligand, command=tk._setit(self.e3ligand_var, ligand))
 
-    def process_ligand(self, selected_ligand, pdb_path, canvas, output_textbox):
+    def process_ligand(self, selected_ligand, pdb_path, canvas, output_textbox, ligandIsWarhead):
         if selected_ligand.startswith("Select"):
             return None
 
@@ -412,11 +424,14 @@ class AtomSelectorApp:
 
             output_textbox.delete(1.0, tk.END)
             output_textbox.insert(tk.END, f"bridge_point: {str(bridge_point_name)}\n", "pink")
-            output_textbox.insert(tk.END, f"align_atoms: {str(align_atom_names)}\n", "green")
+            output_textbox.insert(tk.END, f"align_atoms: {str(align_atom_names)}\n", "red_or_green")
             output_textbox.insert(tk.END, f"overlapping_atoms: {str(overlapping_atoms_names)}", "yellow")
 
             output_textbox.tag_configure("pink", background="#ff7fff")
-            output_textbox.tag_configure("green", background="#7fff7f")
+            if ligandIsWarhead:
+                output_textbox.tag_configure("red_or_green", background="#ff7f7f")
+            else:
+                output_textbox.tag_configure("red_or_green", background="#7fff7f")
             output_textbox.tag_configure("yellow", background="#ffffcc")
 
             highlight_atom_map = {}
@@ -429,31 +444,136 @@ class AtomSelectorApp:
                         highlight_atom_map[atom] = [rgb_tuple]
 
             add_atoms_to_highlight_map(bridge_point_id, (1.0, 0.5, 1.0))
-            add_atoms_to_highlight_map(align_atom_ids, (0.5, 1.0, 0.5))
+            if ligandIsWarhead:
+                add_atoms_to_highlight_map(align_atom_ids, (1.0, 0.5, 0.5))
+            else:
+                add_atoms_to_highlight_map(align_atom_ids, (0.5, 1.0, 0.5))
             add_atoms_to_highlight_map(overlapping_atom_ids, (1.0, 1.0, 0.8))
 
             highlight_radii = {}
             for key in highlight_atom_map:
                 highlight_radii[key] = 0.5
+            self.linker_highlight_radii = highlight_radii
 
                 # Display the image on the canvas
             img = self.get_molecule_image(mol, size=400, highlight_atom_map=highlight_atom_map,
                                           highlight_radii=highlight_radii)
             self.display_image(img, canvas)
 
-            return mol
+            return mol, bridge_point_id, align_atom_ids, overlapping_atom_ids
         else:
             messagebox.showerror("Error", f"Failed to load ligand from {pdb_path}")
-            return None
+            return None, None, None, None
 
     def handle_selection(self, *args):
         selected_warhead = self.warhead_var.get()
+        print(selected_warhead)
         selected_e3ligand = self.e3ligand_var.get()
+        if selected_warhead != "Select Warhead":
+            self.warhead_mol, self.warhead_bridge_point_id, self.warhead_align_atom_ids, self.warhead_overlapping_atom_ids = \
+               self.process_ligand(selected_warhead, "./warhead_ligands/", self.warhead_canvas, self.warhead_ligand_output_text, ligandIsWarhead=True)
+        if selected_e3ligand != "Select E3 ligand":
+            self.e3_mol, self.e3_bridge_point_id, self.e3_align_atom_ids, self.e3_overlapping_atom_ids = \
+                self.process_ligand(selected_e3ligand, "./E3_ligands/", self.e3ligand_canvas, self.e3_ligand_output_text, ligandIsWarhead=False)
 
-        warhead_mol = self.process_ligand(selected_warhead, "./warhead_ligands/", self.warhead_canvas,
-                                          self.warhead_ligand_output_text)
-        e3ligand_mol = self.process_ligand(selected_e3ligand, "./E3_ligands/", self.e3ligand_canvas,
-                                           self.e3_ligand_output_text)
+    def align_molecules(self):
+        # Load warhead,e3, and linker molecules
+        warhead_mol = self.warhead_mol
+        e3_mol = self.e3_mol
+        linker_mol = self.mol
+
+        # Set MCS parameters
+        # params = rdFMCS.MCSParameters()
+        # params.StoreAll = True
+
+        # Perform MCS alignment
+        if warhead_mol and linker_mol is not None:
+            warhead_linker_mcs_result = rdFMCS.FindMCS([warhead_mol, linker_mol], ringMatchesRingOnly=True)
+            match_warhead = warhead_mol.GetSubstructMatches(warhead_linker_mcs_result.queryMol, useQueryQueryMatches=True)
+            match_linker = linker_mol.GetSubstructMatches(warhead_linker_mcs_result.queryMol, useQueryQueryMatches=True)
+            print("warhead match linker: " + str(match_linker))
+            warhead_linker_atom_map = dict(zip(match_warhead[0], match_linker[0]))
+            print("warhead - linker pairs: " + str(warhead_linker_atom_map))
+        else:
+            warhead_linker_atom_map = {}
+
+        if e3_mol and linker_mol is not None:
+            e3_linker_mcs_result = rdFMCS.FindMCS([e3_mol, linker_mol], ringMatchesRingOnly=True)
+            match_e3 = e3_mol.GetSubstructMatches(e3_linker_mcs_result.queryMol, useQueryQueryMatches=True)
+            match_linker = linker_mol.GetSubstructMatches(e3_linker_mcs_result.queryMol, useQueryQueryMatches=True)
+            print("e3 match linker: " + str(match_linker))
+            e3_linker_atom_map = dict(zip(match_e3[0], match_linker[0]))
+            print("e3 - linker pairs: " + str(e3_linker_atom_map))
+        else:
+            e3_linker_atom_map = {}
+
+        linker_warhead_align_atom_id = []
+        linker_e3_align_atom_id = []
+        linker_overlapping_atom_id = []
+        try:
+            print("warhead align id: "+str(self.warhead_align_atom_ids))
+            for atom in self.warhead_align_atom_ids:
+                linker_warhead_align_atom_id.append(warhead_linker_atom_map[atom])
+        except KeyError:
+            messagebox.showerror("Error", f"Unable to find warhead align atoms. Maybe the maximum common structure doesn't align well.\n"
+                                          f"warhead - linker pairs: {str(warhead_linker_atom_map)}")
+
+        try:
+            for atom in self.e3_align_atom_ids:
+                linker_e3_align_atom_id.append(e3_linker_atom_map[atom])
+        except KeyError:
+            messagebox.showerror("Error", f"Unable to find E3 ligand align atoms. Maybe the maximum common structure doesn't align well.\n"
+                                          f"E3 - linker pairs: {str(e3_linker_atom_map)}")
+
+        linker_overlapping_atom_id = list(warhead_linker_atom_map.values()) + list(e3_linker_atom_map.values())
+        linker_overlapping_atom_id_to_remove = []
+        for atom in self.warhead_overlapping_atom_ids:
+            try:
+                linker_overlapping_atom_id_to_remove.append(warhead_linker_atom_map[atom])
+            except KeyError:
+                pass
+        for atom in self.e3_overlapping_atom_ids:
+            try:
+                linker_overlapping_atom_id_to_remove.append(e3_linker_atom_map[atom])
+            except KeyError:
+                pass
+        linker_overlapping_atom_id = [x for x in linker_overlapping_atom_id if x not in linker_overlapping_atom_id_to_remove]
+
+        # output to textbox
+        self.warhead_atoms_entry.delete(0, tk.END)
+        self.warhead_atoms_entry.insert(tk.END, " ".join(str(atom+1) for atom in linker_warhead_align_atom_id))
+        self.E3_atoms_entry.delete(0, tk.END)
+        self.E3_atoms_entry.insert(tk.END, " ".join(str(atom + 1) for atom in linker_e3_align_atom_id))
+        self.useless_atoms_entry.delete(0, tk.END)
+        self.useless_atoms_entry.insert(tk.END, " ".join(str(atom+1) for atom in linker_overlapping_atom_id))
+
+        highlight_atom_map = {}
+
+        def add_atoms_to_highlight_map(atom_indices, rgb_tuple):
+            for atom in atom_indices:
+                if atom in highlight_atom_map:
+                    highlight_atom_map[atom].append(rgb_tuple)
+                else:
+                    highlight_atom_map[atom] = [rgb_tuple]
+
+        add_atoms_to_highlight_map(linker_warhead_align_atom_id, (1.0, 0.5, 0.5))
+        add_atoms_to_highlight_map(linker_e3_align_atom_id, (0.5, 1.0, 0.5))
+        add_atoms_to_highlight_map(linker_overlapping_atom_id, (1.0, 1.0, 0.8))
+
+        self.linker_highlight_map = highlight_atom_map
+
+        print(highlight_atom_map)
+
+        highlight_radii = {}
+        for key in highlight_atom_map:
+            highlight_radii[key] = 0.5
+
+        self.linker_highlight_radii = highlight_radii
+
+        # Generate molecule image with highlighted atoms
+        img = self.get_molecule_image(linker_mol, highlight_atom_map=highlight_atom_map, highlight_radii=highlight_radii)
+        self.display_image(img, self.canvas)
+
 
 
 def main():
