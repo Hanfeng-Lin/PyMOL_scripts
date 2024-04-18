@@ -25,7 +25,7 @@ class AtomSelectorApp:
         self.master.columnconfigure(0, minsize=300)
         self.master.columnconfigure(1, minsize=500)
 
-        self.file_path_label = tk.Label(master, text="Select PDB file:")
+        self.file_path_label = tk.Label(master, text="Select linker conformer PDB file:")
         self.file_path_label.grid(row=0, column=0)
 
         self.file_path_entry = tk.Entry(master)
@@ -97,11 +97,15 @@ class AtomSelectorApp:
         self.useless_atoms_entry = tk.Entry(master)
         self.useless_atoms_entry.grid(row=8, column=1, padx=5, pady=5, sticky="we")
 
+        # Button to generate XML
         self.generate_button = tk.Button(master, text="Generate XML", command=self.generate_xml)
         self.generate_button.grid(row=9, column=2)
         # Button to refresh image
         self.refresh_button = tk.Button(master, text="Refresh Image", command=self.refresh_image)
         self.refresh_button.grid(row=9, column=1, pady=10)
+        # Button to clear input box
+        self.clear_button = tk.Button(master, text="Clear", command=self.clear_input)
+        self.clear_button.grid(row=9, column=0, sticky="e")
 
         # Text widget to display XML output
         self.xml_output_label = tk.Label(master, text="XML Output:")
@@ -498,7 +502,7 @@ class AtomSelectorApp:
             warhead_linker_atom_map = {}
 
         if e3_mol and linker_mol is not None:
-            e3_linker_mcs_result = rdFMCS.FindMCS([e3_mol, linker_mol], ringMatchesRingOnly=True)
+            e3_linker_mcs_result = rdFMCS.FindMCS([e3_mol, linker_mol],  bondCompare=rdFMCS.BondCompare.CompareOrderExact)  # Optional: ringMatchesRingOnly=True
             match_e3 = e3_mol.GetSubstructMatches(e3_linker_mcs_result.queryMol, useQueryQueryMatches=True)
             match_linker = linker_mol.GetSubstructMatches(e3_linker_mcs_result.queryMol, useQueryQueryMatches=True)
             print("e3 match linker: " + str(match_linker))
@@ -546,6 +550,8 @@ class AtomSelectorApp:
         self.E3_atoms_entry.insert(tk.END, " ".join(str(atom + 1) for atom in linker_e3_align_atom_id))
         self.useless_atoms_entry.delete(0, tk.END)
         self.useless_atoms_entry.insert(tk.END, " ".join(str(atom+1) for atom in linker_overlapping_atom_id))
+        self.bridge_point_warhead_entry.delete(0, tk.END)
+        self.bridge_point_E3ligand_entry.delete(0, tk.END)
 
         highlight_atom_map = {}
 
@@ -574,6 +580,12 @@ class AtomSelectorApp:
         img = self.get_molecule_image(linker_mol, highlight_atom_map=highlight_atom_map, highlight_radii=highlight_radii)
         self.display_image(img, self.canvas)
 
+    def clear_input(self):
+        self.warhead_atoms_entry.delete(0, tk.END)
+        self.E3_atoms_entry.delete(0, tk.END)
+        self.useless_atoms_entry.delete(0, tk.END)
+        self.bridge_point_warhead_entry.delete(0, tk.END)
+        self.bridge_point_E3ligand_entry.delete(0, tk.END)
 
 
 def main():
