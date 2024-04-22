@@ -21,7 +21,7 @@ Jin Wang Lab, Baylor College of Medicine
 
 
 @cmd.extend
-def autoProtac(targetProtein, E3ligase, ternary_reduction=False):
+def autoProtac(targetProtein, E3ligase, ternary_reduction=False, bin_size=300):
     assert targetProtein in cmd.get_object_list(), \
         "no target protein detected in the workspace, check your spelling"
     assert E3ligase in cmd.get_object_list(), \
@@ -65,7 +65,7 @@ def autoProtac(targetProtein, E3ligase, ternary_reduction=False):
     linker_e3ligand_align_atoms = align_atoms[3]
 
     # Create conformation bins. The list contains filenames.pdb
-    protac_bin_list = protac_bin(bin_size=300)
+    protac_bin_list = protac_bin(bin_size)
 
     # Open each bin for alignment
     current_ternary_count = 0
