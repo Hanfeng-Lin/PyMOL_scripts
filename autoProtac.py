@@ -14,6 +14,7 @@ PyMOL> run autoProtac.py
 PyMOL> autoProtac targetProteinObject, E3LigaseObject
 
 Recommend to turn on ternary_reduction=True if modeling for flexible linker.
+For long flexible linker, a smaller bin size is recommend, e.g. 100
 
 Credit: Hanfeng Lin
 Jin Wang Lab, Baylor College of Medicine
@@ -65,7 +66,7 @@ def autoProtac(targetProtein, E3ligase, ternary_reduction=False, bin_size=300):
     linker_e3ligand_align_atoms = align_atoms[3]
 
     # Create conformation bins. The list contains filenames.pdb
-    protac_bin_list = protac_bin(bin_size)
+    protac_bin_list = protac_bin(int(bin_size))
 
     # Open each bin for alignment
     current_ternary_count = 0
