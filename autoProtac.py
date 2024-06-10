@@ -22,7 +22,7 @@ Jin Wang Lab, Baylor College of Medicine
 
 
 @cmd.extend
-def autoProtac(targetProtein, E3ligase, ternary_reduction=False, bin_size=300):
+def autoProtac(targetProtein, E3ligase, ternary_reduction=False, ternary_rmsd_cutoff=1, bin_size=300):
     assert targetProtein in cmd.get_object_list(), \
         "no target protein detected in the workspace, check your spelling"
     assert E3ligase in cmd.get_object_list(), \
@@ -115,7 +115,7 @@ def autoProtac(targetProtein, E3ligase, ternary_reduction=False, bin_size=300):
     success_list.remove(E3ligase)
 
     if ternary_reduction:
-        ternaryReduction_new(success_list)
+        ternaryReduction_new(success_list, rmsd_cutoff=ternary_rmsd_cutoff)
 
     success_list = cmd.get_object_list()
     success_list.remove(targetProtein)
