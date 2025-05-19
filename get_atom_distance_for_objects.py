@@ -4,9 +4,7 @@ from protac_bin import protac_bin
 import matplotlib.pyplot as plt
 import os, math
 """
-This scripts helps export distance objects in pymol into a csv file in a state-wise manner.
-Usage: get_trajectory_distance("measure01", "measure02", ...)
-csv file will be found in the pymol current working directory
+this is used for calculating the PROTAC bridging atom distance distribution.
 """
 
 

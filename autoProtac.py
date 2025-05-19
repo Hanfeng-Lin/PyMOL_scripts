@@ -28,12 +28,14 @@ def autoProtac(targetProtein, E3ligase, ternary_reduction=False, ternary_rmsd_cu
     assert E3ligase in cmd.get_object_list(), \
         "no E3 ligase protein detected in the workspace, check your spelling"
 
+    print("########################################")
     print("### target protein: "+targetProtein)
     print("### E3 ligase protein: " + E3ligase)
     print("### Include ternary reduction? --" + str(ternary_reduction))
     if ternary_reduction:
         print("### ternary_rmsd_cutoff: " + str(ternary_rmsd_cutoff) + " Angstrom")
     print("### bin size: " + str(bin_size))
+    print("########################################")
 
     start = time.perf_counter()
     print("Removing side chain...")
@@ -122,7 +124,7 @@ def autoProtac(targetProtein, E3ligase, ternary_reduction=False, ternary_rmsd_cu
     success_list.remove(E3ligase)
 
     if ternary_reduction:
-        ternaryReduction_new(success_list, rmsd_cutoff=ternary_rmsd_cutoff)
+        ternaryReduction_new(success_list, rmsd_cutoff=float(ternary_rmsd_cutoff))
 
     success_list = cmd.get_object_list()
     success_list.remove(targetProtein)

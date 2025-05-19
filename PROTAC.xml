@@ -139,6 +139,18 @@
                 <overlapping_atoms>
                 </overlapping_atoms>
             </ligand>
+            <ligand title="4YYB">
+                linker exit vector from middle methylene ring
+                <SMILES>Cc1ncsc1c2ccc(CNC([C@@H]3C[C@@H](O)CN3C([C@@H](NC(C4(F)CC4)=O)C(C)(C)C)=O)=O)cc2</SMILES>
+                <bridge_point>CAQ</bridge_point>
+                <align_atoms>
+                    <atom>CAQ</atom>
+                    <atom>NAU</atom>
+                    <atom>CBB</atom>
+                </align_atoms>
+                <overlapping_atoms>
+                </overlapping_atoms>
+            </ligand>
         </protein>
         <protein title="CRBN">
             <ligand title="Y70">
@@ -152,6 +164,32 @@
                 </align_atoms>
                 <overlapping_atoms>
                     <atom>N10</atom>
+                </overlapping_atoms>
+            </ligand>
+            <ligand title="Y70A">
+                Pomalidomide (change the amine position to meta) + CRBN 8D81
+                <SMILES>O=C(N1[C@H]2CCC(NC2=O)=O)c3cc(N)ccc3C1=O</SMILES>O=C(N1[C@H]2CCC(NC2=O)=O)c3ccc(N)cc3C1=O
+                <bridge_point>C1</bridge_point>
+                <align_atoms>
+                    <atom>C2</atom>
+                    <atom>C4</atom>
+                    <atom>C6</atom>
+                </align_atoms>
+                <overlapping_atoms>
+                    <atom>N21</atom>
+                </overlapping_atoms>
+            </ligand>
+            <ligand title="Y70B">
+                Pomalidomide (change the amine position to the opposite meta) + CRBN 8D81
+                <SMILES>O=C(N1[C@H]2CCC(NC2=O)=O)c3ccc(N)cc3C1=O</SMILES>
+                <bridge_point>C2</bridge_point>
+                <align_atoms>
+                    <atom>C2</atom>
+                    <atom>C4</atom>
+                    <atom>C6</atom>
+                </align_atoms>
+                <overlapping_atoms>
+                    <atom>N21</atom>
                 </overlapping_atoms>
             </ligand>
         </protein>
@@ -176,6 +214,35 @@
             <useless_atoms>
                 <atom>C14</atom>
             </useless_atoms>
+        </linker>
+        <linker title="597">
+          <warhead_align_atoms>
+            <atom>N43</atom>
+            <atom>N42</atom>
+            <atom>N44</atom>
+            <atom>C14</atom>
+            <atom>C25</atom>
+          </warhead_align_atoms>
+          <bridge_point_warhead>C14</bridge_point_warhead>
+          <E3_align_atoms>
+            <atom>C40</atom>
+            <atom>N49</atom>
+            <atom>C22</atom>
+          </E3_align_atoms>
+          <bridge_point_E3ligand>C39</bridge_point_E3ligand>
+          <useless_atoms>
+            <atom>C38</atom>
+            <atom>C28</atom>
+            <atom>O52</atom>
+            <atom>N49</atom>
+            <atom>C40</atom>
+            <atom>C22</atom>
+            <atom>C11</atom>
+            <atom>C4</atom>
+            <atom>C3</atom>
+            <atom>C5</atom>
+            <atom>C12</atom>
+          </useless_atoms>
         </linker>
         <linker title="mz1">
             <warhead_align_atoms>
@@ -605,6 +672,199 @@
                 <atom>O35</atom>
             </useless_atoms>
         </linker>
+        <linker title="p38">
+            <warhead_align_atoms>
+              <atom>C2</atom>
+              <atom>C1</atom>
+              <atom>C6</atom>
+            </warhead_align_atoms>
+            <bridge_point_warhead>N30</bridge_point_warhead>
+            <E3_align_atoms>
+              <atom>N33</atom>
+              <atom>C9</atom>
+              <atom>O36</atom>
+            </E3_align_atoms>
+            <bridge_point_E3ligand>C23</bridge_point_E3ligand>
+            <useless_atoms>
+              <atom>C5</atom>
+              <atom>C2</atom>
+              <atom>C1</atom>
+              <atom>C4</atom>
+              <atom>C3</atom>
+              <atom>C6</atom>
+              <atom>C11</atom>
+              <atom>N32</atom>
+              <atom>C10</atom>
+              <atom>C8</atom>
+              <atom>C16</atom>
+              <atom>C17</atom>
+              <atom>O35</atom>
+              <atom>C28</atom>
+              <atom>O37</atom>
+              <atom>N33</atom>
+              <atom>C29</atom>
+              <atom>C9</atom>
+              <atom>C21</atom>
+              <atom>C20</atom>
+              <atom>C19</atom>
+              <atom>O36</atom>
+            </useless_atoms>
+        </linker>
+        <linker title="384">
+            ps38-C4linker
+          <warhead_align_atoms>
+            <atom>C2</atom>
+            <atom>C1</atom>
+            <atom>C6</atom>
+          </warhead_align_atoms>
+          <bridge_point_warhead>N28</bridge_point_warhead>
+          <E3_align_atoms>
+            <atom>N31</atom>
+            <atom>C9</atom>
+            <atom>O34</atom>
+          </E3_align_atoms>
+          <bridge_point_E3ligand>C23</bridge_point_E3ligand>
+          <useless_atoms>
+            <atom>C5</atom>
+            <atom>C2</atom>
+            <atom>C1</atom>
+            <atom>C4</atom>
+            <atom>C3</atom>
+            <atom>C6</atom>
+            <atom>C11</atom>
+            <atom>N30</atom>
+            <atom>C10</atom>
+            <atom>C8</atom>
+            <atom>C16</atom>
+            <atom>C17</atom>
+            <atom>O33</atom>
+            <atom>C26</atom>
+            <atom>O35</atom>
+            <atom>N31</atom>
+            <atom>C27</atom>
+            <atom>C9</atom>
+            <atom>C21</atom>
+            <atom>C20</atom>
+            <atom>C19</atom>
+            <atom>O34</atom>
+            <atom>C18</atom>
+          </useless_atoms>
+        </linker>
+
+        <linker title="382">
+            ps38c2 linker
+              <warhead_align_atoms>
+                <atom>C2</atom>
+                <atom>C1</atom>
+                <atom>C6</atom>
+              </warhead_align_atoms>
+              <bridge_point_warhead>N26</bridge_point_warhead>
+              <E3_align_atoms>
+                <atom>N29</atom>
+                <atom>C9</atom>
+                <atom>O32</atom>
+              </E3_align_atoms>
+              <bridge_point_E3ligand>C23</bridge_point_E3ligand>
+              <useless_atoms>
+                <atom>C5</atom>
+                <atom>C2</atom>
+                <atom>C1</atom>
+                <atom>C4</atom>
+                <atom>C3</atom>
+                <atom>C6</atom>
+                <atom>C11</atom>
+                <atom>N28</atom>
+                <atom>C10</atom>
+                <atom>C8</atom>
+                <atom>C16</atom>
+                <atom>C17</atom>
+                <atom>O31</atom>
+                <atom>C24</atom>
+                <atom>O33</atom>
+                <atom>N29</atom>
+                <atom>C25</atom>
+                <atom>C9</atom>
+                <atom>C21</atom>
+                <atom>C20</atom>
+                <atom>C19</atom>
+                <atom>O32</atom>
+                <atom>C18</atom>
+              </useless_atoms>
+            </linker>
+            <linker title="380">
+              <warhead_align_atoms>
+                <atom>C2</atom>
+                <atom>C1</atom>
+                <atom>C6</atom>
+              </warhead_align_atoms>
+              <bridge_point_warhead>N24</bridge_point_warhead>
+              <E3_align_atoms>
+                <atom>N27</atom>
+                <atom>C8</atom>
+                <atom>O29</atom>
+              </E3_align_atoms>
+              <bridge_point_E3ligand>C21</bridge_point_E3ligand>
+              <useless_atoms>
+                <atom>C5</atom>
+                <atom>C2</atom>
+                <atom>C1</atom>
+                <atom>C4</atom>
+                <atom>C3</atom>
+                <atom>C6</atom>
+                <atom>C10</atom>
+                <atom>C9</atom>
+                <atom>N25</atom>
+                <atom>C16</atom>
+                <atom>C15</atom>
+                <atom>C7</atom>
+                <atom>O30</atom>
+                <atom>C22</atom>
+                <atom>O28</atom>
+                <atom>C23</atom>
+                <atom>N27</atom>
+                <atom>C20</atom>
+                <atom>C19</atom>
+                <atom>C18</atom>
+                <atom>C8</atom>
+                <atom>O29</atom>
+              </useless_atoms>
+            </linker>
+<linker title="test">
+  <warhead_align_atoms>
+    <atom>C2</atom>
+    <atom>C1</atom>
+    <atom>C6</atom>
+  </warhead_align_atoms>
+  <bridge_point_warhead>N21</bridge_point_warhead>
+  <E3_align_atoms>
+    <atom>N23</atom>
+    <atom>C8</atom>
+    <atom>O25</atom>
+  </E3_align_atoms>
+  <bridge_point_E3ligand>C16</bridge_point_E3ligand>
+  <useless_atoms>
+    <atom>C3</atom>
+    <atom>C1</atom>
+    <atom>C6</atom>
+    <atom>C5</atom>
+    <atom>C4</atom>
+    <atom>C2</atom>
+    <atom>C6</atom>
+    <atom>C14</atom>
+    <atom>N23</atom>
+    <atom>C8</atom>
+    <atom>O25</atom>
+    <atom>C13</atom>
+  </useless_atoms>
+</linker>
+
+
+
+
+
+
+
+
 
     </linkers>
 </ligand>
