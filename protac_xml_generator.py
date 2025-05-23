@@ -173,12 +173,12 @@ class AtomSelectorApp:
             return
         omegaOpts = oeomega.OEOmegaOptions()
 
-        print(oeomega.OEOmegaGetRelease())
+        print("OEOmega Release:",oeomega.OEOmegaGetRelease())
         print(oeomega.OEOmegaGetLicensee())
         print(omegaOpts.GetSearchForceField())
 
         omegaOpts.SetRMSThreshold(0.2)
-        omegaOpts.SetEnergyWindow(10)
+        omegaOpts.SetEnergyWindow(12)
         omegaOpts.SetMaxConfs(10000)
         omegaOpts.SetMaxSearchTime(600)
 
