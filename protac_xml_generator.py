@@ -46,10 +46,14 @@ class AtomSelectorApp:
         # Canvas for linker
         self.canvas = tk.Canvas(master, width=400, height=400)
         self.canvas.grid(row=2, rowspan=2, column=1, columnspan=2, sticky="w")
+        self.canvas = tk.Canvas(master, width=400, height=400)
+        self.canvas.grid(row=2, rowspan=2, column=1, columnspan=2, sticky="w")
         # Canvas for warhead
+        self.warhead_canvas = tk.Canvas(master, width=300, height=300)
         self.warhead_canvas = tk.Canvas(master, width=300, height=300)
         self.warhead_canvas.grid(row=2, column=5)
         # Canvas for E3 ligand image
+        self.e3ligand_canvas = tk.Canvas(master, width=300, height=300)
         self.e3ligand_canvas = tk.Canvas(master, width=300, height=300)
         self.e3ligand_canvas.grid(row=2, column=6)
 
@@ -58,10 +62,18 @@ class AtomSelectorApp:
         self.warhead_ligand_output_label.grid(row=3, column=5)
         self.warhead_ligand_output_text = tk.Text(master, width=40, height=10)
         self.warhead_ligand_output_text.grid(row=4, column=5, rowspan=3, padx=5, pady=5, sticky="we")
+        self.warhead_ligand_output_text.grid(row=4, column=5, rowspan=3, padx=5, pady=5, sticky="we")
 
         self.e3_ligand_output_label = tk.Label(master, text="E3 ligand")
         self.e3_ligand_output_label.grid(row=3, column=6)
         self.e3_ligand_output_text = tk.Text(master, width=40, height=10)
+        self.e3_ligand_output_text.grid(row=4, column=6, rowspan=3, padx=5, pady=5, sticky="we")
+
+         # Canvas and Label for Bridged PROTAC image
+        self.bridged_protac_label = tk.Label(master, text="Bridged PROTAC View:")
+        self.bridged_protac_label.grid(row=7, column=5, columnspan=2, sticky="s", pady=(0,0)) # Adjust row/column as needed
+        self.bridged_protac_canvas = tk.Canvas(master, width=400, height=300) # Or desired size
+        self.bridged_protac_canvas.grid(row=8, column=5, columnspan=2, rowspan=3, padx=5, pady=5,sticky="we") # Adjust rowspan if necessary
         self.e3_ligand_output_text.grid(row=4, column=6, rowspan=3, padx=5, pady=5, sticky="we")
 
          # Canvas and Label for Bridged PROTAC image
@@ -222,6 +234,7 @@ class AtomSelectorApp:
         if mol is not None:
             self.mol = mol
             img = self.get_molecule_image(mol,size=400)
+            img = self.get_molecule_image(mol,size=400)
             if img:
                 print("Image size:", img.width(), "x", img.height())
                 self.display_image(img, self.canvas)
@@ -248,6 +261,25 @@ class AtomSelectorApp:
         photo_image = ImageTk.PhotoImage(pil_img)
         return photo_image
 
+    def display_image(self, img, target_canvas): # target_canvas argument was already there
+        target_canvas.delete("all") # Clear previous image/widgets on the canvas
+
+        # Ensure Tkinter has processed pending geometry calculations for the canvas
+        target_canvas.update_idletasks()
+
+        canvas_width = target_canvas.winfo_width()
+        canvas_height = target_canvas.winfo_height()
+
+        # Create the label to hold the image
+        image_label = tk.Label(target_canvas, image=img)
+        image_label.image = img  # Keep a reference to avoid garbage collection
+
+        # Place the center of the image_label at the center of the target_canvas
+        image_label.place(x=canvas_width/2, y=canvas_height/2, anchor=tk.CENTER)
+        
+        # Store the label on the target_canvas itself if you need to reference it later
+        # (e.g., if you wanted to remove or update it specifically without deleting "all")
+        target_canvas.image_label = image_label 
     def display_image(self, img, target_canvas): # target_canvas argument was already there
         target_canvas.delete("all") # Clear previous image/widgets on the canvas
 
@@ -313,6 +345,7 @@ class AtomSelectorApp:
 
         # Generate molecule image with highlighted atoms
         img = self.get_molecule_image(mol,size=400, highlight_atom_map=highlight_atom_map, highlight_radii=highlight_radii)
+        img = self.get_molecule_image(mol,size=400, highlight_atom_map=highlight_atom_map, highlight_radii=highlight_radii)
         self.display_image(img, self.canvas)
 
     def rotate_image(self):
@@ -320,12 +353,14 @@ class AtomSelectorApp:
         Chem.rdMolTransforms.TransformConformer(self.mol.GetConformer(), np.array(
             [[0., 1., 0., 0.], [-1., 0., 0., 0.], [0., 0., 1., 0.], [0., 0., 0., 1.]]))
         img = self.get_molecule_image(self.mol,size=400, highlight_atom_map=self.linker_highlight_map, highlight_radii=self.linker_highlight_radii)
+        img = self.get_molecule_image(self.mol,size=400, highlight_atom_map=self.linker_highlight_map, highlight_radii=self.linker_highlight_radii)
         self.display_image(img, self.canvas)
 
     def flip_image(self):
         # Flip the RDKit molecule
         Chem.rdMolTransforms.TransformConformer(self.mol.GetConformer(), np.array(
             [[-1., 0., 0., 0.], [0., 1., 0., 0.], [0., 0., -1., 0.], [0., 0., 0., 1.]]))
+        img = self.get_molecule_image(self.mol,size=400, highlight_atom_map=self.linker_highlight_map, highlight_radii=self.linker_highlight_radii)
         img = self.get_molecule_image(self.mol,size=400, highlight_atom_map=self.linker_highlight_map, highlight_radii=self.linker_highlight_radii)
         self.display_image(img, self.canvas)
 
@@ -341,6 +376,8 @@ class AtomSelectorApp:
             # Generate XML
             self.generate_xml_file(linker_title, warhead_atoms, bridge_point_warhead, E3_atoms, bridge_point_E3ligand,
                                    useless_atoms)
+            # build and display the bridged PROTAC
+            self.build_and_display_bridged_protac()
             # build and display the bridged PROTAC
             self.build_and_display_bridged_protac()
         else:
@@ -533,6 +570,7 @@ class AtomSelectorApp:
 
                 # Display the image on the canvas
             img = self.get_molecule_image(mol, size=300, highlight_atom_map=highlight_atom_map,
+            img = self.get_molecule_image(mol, size=300, highlight_atom_map=highlight_atom_map,
                                           highlight_radii=highlight_radii)
             self.display_image(img, canvas)
 
@@ -650,6 +688,7 @@ class AtomSelectorApp:
 
         # Generate molecule image with highlighted atoms
         img = self.get_molecule_image(linker_mol, size=400, highlight_atom_map=highlight_atom_map, highlight_radii=highlight_radii)
+        img = self.get_molecule_image(linker_mol, size=400, highlight_atom_map=highlight_atom_map, highlight_radii=highlight_radii)
         self.display_image(img, self.canvas)
 
     def clear_input(self):
@@ -659,6 +698,203 @@ class AtomSelectorApp:
         self.bridge_point_warhead_entry.delete(0, tk.END)
         self.bridge_point_E3ligand_entry.delete(0, tk.END)
 
+    def get_new_atom_idx(self, original_mol_num_atoms, atoms_to_remove_indices, original_target_idx):
+        """
+        Calculates the new index of an atom after other atoms have been removed.
+        Assumes original_target_idx is NOT in atoms_to_remove_indices.
+        original_mol_num_atoms is not strictly needed if original_target_idx is validated against it.
+        atoms_to_remove_indices should be a list of 0-based indices.
+        """
+        if original_target_idx in atoms_to_remove_indices:
+            # This case indicates the target atom itself was in the removal list
+            return -1 
+
+        new_idx = original_target_idx
+        # Ensure atoms_to_remove_indices are unique and sorted for correct counting
+        for removed_idx in sorted(list(set(atoms_to_remove_indices))):
+            if removed_idx < original_target_idx:
+                new_idx -= 1
+            # If removed_idx == original_target_idx, it's caught by the initial check.
+        return new_idx
+
+    def build_and_display_bridged_protac(self):
+        if self.mol is None:
+            messagebox.showinfo("Info", "Please load a linker PDB first.")
+            return
+        if self.warhead_mol is None:
+            messagebox.showinfo("Info", "Please select a warhead ligand first.")
+            return
+        if self.e3_mol is None:
+            messagebox.showinfo("Info", "Please select an E3 ligand first.")
+            return
+
+        try:
+            # 0. Get molecules (make copies)
+            linker_original_copy = Chem.Mol(self.mol) # Use this for initial index calculations
+            warhead = Chem.Mol(self.warhead_mol)
+            e3_ligand = Chem.Mol(self.e3_mol)
+
+            # 1. Get linker connection atom indices (0-based from original linker)
+            linker_atom_idx_for_warhead_str = self.bridge_point_warhead_entry.get()
+            linker_atom_idx_for_e3_str = self.bridge_point_E3ligand_entry.get()
+
+            if not linker_atom_idx_for_warhead_str or not linker_atom_idx_for_e3_str:
+                messagebox.showerror("Error", "Bridge points for linker must be specified.")
+                return
+
+            original_linker_idx_for_warhead = int(linker_atom_idx_for_warhead_str) - 1
+            original_linker_idx_for_e3 = int(linker_atom_idx_for_e3_str) - 1
+
+            # 2. Get warhead connection atom index (0-based, on original warhead_mol)
+            if not self.warhead_bridge_point_id:
+                messagebox.showerror("Error", "Warhead bridge point not defined from XML.")
+                return
+            warhead_connection_atom_idx_original = self.warhead_bridge_point_id[0]
+
+            # 3. Get E3 ligand connection atom index (0-based, on original e3_mol)
+            if not self.e3_bridge_point_id:
+                messagebox.showerror("Error", "E3 ligand bridge point not defined from XML.")
+                return
+            e3_connection_atom_idx_original = self.e3_bridge_point_id[0]
+
+            # 4. Identify atoms to REMOVE from warhead and E3 ligand ('overlapping_atoms')
+            warhead_atoms_to_remove_indices = self.warhead_overlapping_atom_ids or []
+            e3_atoms_to_remove_indices = self.e3_overlapping_atom_ids or []
+
+            if warhead_connection_atom_idx_original in warhead_atoms_to_remove_indices:
+                messagebox.showerror("Error", "Warhead connection atom cannot be in its 'overlapping_atoms' to remove.")
+                return
+            if e3_connection_atom_idx_original in e3_atoms_to_remove_indices:
+                messagebox.showerror("Error", "E3 connection atom cannot be in its 'overlapping_atoms' to remove.")
+                return
+
+            # 4.5 Prepare Linker Fragment (Remove useless atoms from linker)
+            # These useless_atoms are from the self.useless_atoms_entry, referring to original linker.
+            useless_linker_atoms_str = self.useless_atoms_entry.get().split()
+            linker_atoms_to_remove_original_indices = []
+            if useless_linker_atoms_str:
+                try:
+                    # Get 0-based indices for removal
+                    linker_atoms_to_remove_original_indices = [int(x)-1 for x in useless_linker_atoms_str if x]
+                except ValueError:
+                    messagebox.showerror("Input Error", "Invalid atom index in 'Useless Atoms' (for linker) entry.")
+                    return
+            
+            # Check if linker connection points are themselves in the list of atoms to remove from linker
+            if original_linker_idx_for_warhead in linker_atoms_to_remove_original_indices:
+                messagebox.showerror("Error", "Linker's warhead connection point is listed in 'Useless Atoms' to remove from linker.")
+                return
+            if original_linker_idx_for_e3 in linker_atoms_to_remove_original_indices:
+                messagebox.showerror("Error", "Linker's E3 connection point is listed in 'Useless Atoms' to remove from linker.")
+                return
+
+            rw_linker = Chem.RWMol(linker_original_copy)
+            # Sort for safe removal (descending)
+            for idx_linker_rem in sorted(list(set(linker_atoms_to_remove_original_indices)), reverse=True):
+                rw_linker.RemoveAtom(idx_linker_rem)
+            
+            linker_frag = rw_linker.GetMol() # This is the linker to be used for bridging
+
+            # Update linker connection point indices to reflect their new positions in linker_frag
+            linker_idx_for_warhead_in_frag = self.get_new_atom_idx(
+                linker_original_copy.GetNumAtoms(), 
+                linker_atoms_to_remove_original_indices, 
+                original_linker_idx_for_warhead
+            )
+            linker_idx_for_e3_in_frag = self.get_new_atom_idx(
+                linker_original_copy.GetNumAtoms(),
+                linker_atoms_to_remove_original_indices,
+                original_linker_idx_for_e3
+            )
+
+            if linker_idx_for_warhead_in_frag == -1 or linker_idx_for_e3_in_frag == -1:
+                messagebox.showerror("Error", "Failed to map linker connection points after removing 'Useless Atoms' from linker. This might happen if connection points were indirectly removed.")
+                return
+
+            # 5. Prepare warhead fragment
+            rw_warhead = Chem.RWMol(warhead)
+            for idx_wh_rem in sorted(list(set(warhead_atoms_to_remove_indices)), reverse=True): # use set to ensure unique before sort
+                rw_warhead.RemoveAtom(idx_wh_rem)
+            warhead_frag = rw_warhead.GetMol()
+            warhead_connection_atom_new_idx = self.get_new_atom_idx(warhead.GetNumAtoms(), warhead_atoms_to_remove_indices, warhead_connection_atom_idx_original)
+            if warhead_connection_atom_new_idx == -1: 
+                 messagebox.showerror("Error", "Failed to map warhead connection atom after removal (was it in overlapping_atoms?).")
+                 return
+
+            # 6. Prepare E3 ligand fragment
+            rw_e3 = Chem.RWMol(e3_ligand)
+            for idx_e3_rem in sorted(list(set(e3_atoms_to_remove_indices)), reverse=True): # use set
+                rw_e3.RemoveAtom(idx_e3_rem)
+            e3_frag = rw_e3.GetMol()
+            e3_connection_atom_new_idx = self.get_new_atom_idx(e3_ligand.GetNumAtoms(), e3_atoms_to_remove_indices, e3_connection_atom_idx_original)
+            if e3_connection_atom_new_idx == -1:
+                 messagebox.showerror("Error", "Failed to map E3 connection atom after removal (was it in overlapping_atoms?).")
+                 return
+
+            # 7. Combine linker_frag and warhead_frag
+            # Use linker_frag and its updated connection indices
+            merged_mol_rw = Chem.RWMol(linker_frag) 
+            
+            wh_frag_idx_map = {} 
+            for i_whf, atom_whf in enumerate(warhead_frag.GetAtoms()):
+                new_atom_idx_in_merged = merged_mol_rw.AddAtom(atom_whf)
+                wh_frag_idx_map[i_whf] = new_atom_idx_in_merged
+
+            for bond_whf in warhead_frag.GetBonds():
+                merged_mol_rw.AddBond(wh_frag_idx_map[bond_whf.GetBeginAtomIdx()],
+                                      wh_frag_idx_map[bond_whf.GetEndAtomIdx()],
+                                      bond_whf.GetBondType())
+            
+            # Use the updated linker index: linker_idx_for_warhead_in_frag
+            merged_mol_rw.AddBond(linker_idx_for_warhead_in_frag,
+                                  wh_frag_idx_map[warhead_connection_atom_new_idx],
+                                  Chem.BondType.SINGLE)
+            intermediate_protac = merged_mol_rw.GetMol()
+
+            # 8. Combine intermediate_protac and e3_frag
+            final_protac_rw = Chem.RWMol(intermediate_protac)
+
+            e3_frag_idx_map = {}
+            for i_e3f, atom_e3f in enumerate(e3_frag.GetAtoms()):
+                new_atom_idx_in_final = final_protac_rw.AddAtom(atom_e3f)
+                e3_frag_idx_map[i_e3f] = new_atom_idx_in_final
+            
+            for bond_e3f in e3_frag.GetBonds():
+                final_protac_rw.AddBond(e3_frag_idx_map[bond_e3f.GetBeginAtomIdx()],
+                                        e3_frag_idx_map[bond_e3f.GetEndAtomIdx()],
+                                        bond_e3f.GetBondType())
+
+            # Use the updated linker index: linker_idx_for_e3_in_frag
+            final_protac_rw.AddBond(linker_idx_for_e3_in_frag, 
+                                    e3_frag_idx_map[e3_connection_atom_new_idx],
+                                    Chem.BondType.SINGLE)
+            
+            final_protac_mol = final_protac_rw.GetMol()
+
+            # 9. Sanitize, clear atom notes, and compute 2D coordinates
+            try:
+                for atom in final_protac_mol.GetAtoms():
+                    if atom.HasProp('atomNote'):
+                        atom.ClearProp('atomNote')
+                Chem.SanitizeMol(final_protac_mol)
+            except Exception as e:
+                print(f"Error during final PROTAC sanitization: {e}")
+            
+            AllChem.Compute2DCoords(final_protac_mol)
+
+            # 10. Display the final PROTAC
+            img = self.get_molecule_image(final_protac_mol, size=300) 
+            if img:
+                self.display_image(img, self.bridged_protac_canvas)
+            else:
+                messagebox.showerror("Error", "Failed to generate image for the bridged PROTAC.")
+
+        except ValueError as ve:
+            messagebox.showerror("Input Error", f"Please check atom index inputs: {ve}")
+        except Exception as e:
+            messagebox.showerror("Bridging Error", f"An error occurred while building PROTAC: {e}")
+            import traceback
+            traceback.print_exc()
     def get_new_atom_idx(self, original_mol_num_atoms, atoms_to_remove_indices, original_target_idx):
         """
         Calculates the new index of an atom after other atoms have been removed.
