@@ -1,3 +1,3 @@
-![README_architecture](.\src\README_architecture.png)
+![README_architecture](./src/README_architecture.png)
 
-![README_autoProtac](.\src\README_autoProtac.png)
+![README_autoProtac](./src/README_autoProtac.png)
