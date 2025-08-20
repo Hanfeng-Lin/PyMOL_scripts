@@ -215,6 +215,38 @@
                 <atom>C14</atom>
             </useless_atoms>
         </linker>
+        <linker title="472">
+            <warhead_align_atoms>
+              <atom>N31</atom>
+              <atom>N30</atom>
+              <atom>N32</atom>
+              <atom>C1</atom>
+              <atom>C6</atom>
+            </warhead_align_atoms>
+            <bridge_point_warhead>C1</bridge_point_warhead>
+            <E3_align_atoms>
+              <atom>N35</atom>
+              <atom>C8</atom>
+              <atom>O38</atom>
+            </E3_align_atoms>
+            <bridge_point_E3ligand>C16</bridge_point_E3ligand>
+            <useless_atoms>
+              <atom>C13</atom>
+              <atom>N36</atom>
+              <atom>C9</atom>
+              <atom>C14</atom>
+              <atom>O39</atom>
+              <atom>C28</atom>
+              <atom>N35</atom>
+              <atom>C29</atom>
+              <atom>C8</atom>
+              <atom>C10</atom>
+              <atom>C12</atom>
+              <atom>C11</atom>
+              <atom>O38</atom>
+            </useless_atoms>
+        </linker>
+
         <linker title="597">
           <warhead_align_atoms>
             <atom>N43</atom>
@@ -245,43 +277,56 @@
           </useless_atoms>
         </linker>
         <linker title="mz1">
-            <warhead_align_atoms>
-                <atom>C11</atom>
-                <atom>C7</atom>
-                <atom>C6</atom>
-                <atom>N20</atom>
-                <atom>C5</atom>
-                <atom>C4</atom>
-                <atom>C1</atom>
-                <atom>N19</atom>
-            </warhead_align_atoms>
-            <E3_align_atoms>
-                <atom>N21</atom>
-                <atom>C3</atom>
-                <atom>O24</atom>
-            </E3_align_atoms>
-            <bridge_point_warhead>C11</bridge_point_warhead>
-            <bridge_point_E3ligand>C12</bridge_point_E3ligand>
-            <useless_atoms>
-                BRD4:
-                <atom>C8</atom>
-                <atom>C9</atom>
-
-
-                <atom>C7</atom>
-                <atom>C6</atom>
-                <atom>N20</atom>
-                <atom>C5</atom>
-                <atom>C4</atom>
-                <atom>C1</atom>
-                <atom>N19</atom>
-                VHL:
-                <atom>C3</atom>
-                <atom>C10</atom>
-                <atom>N21</atom>
-                <atom>O24</atom>
-            </useless_atoms>
+          <warhead_align_atoms>
+            <atom>C20</atom>
+            <atom>C15</atom>
+            <atom>C6</atom>
+            <atom>N33</atom>
+            <atom>C5</atom>
+            <atom>C4</atom>
+            <atom>C7</atom>
+            <atom>N32</atom>
+          </warhead_align_atoms>
+          <bridge_point_warhead>C20</bridge_point_warhead>
+          <E3_align_atoms>
+            <atom>N36</atom>
+            <atom>C10</atom>
+            <atom>O39</atom>
+          </E3_align_atoms>
+          <bridge_point_E3ligand>C21</bridge_point_E3ligand>
+          <useless_atoms>
+            <atom>C1</atom>
+            <atom>C2</atom>
+            <atom>C4</atom>
+            <atom>S43</atom>
+            <atom>C7</atom>
+            <atom>C5</atom>
+            <atom>N32</atom>
+            <atom>N33</atom>
+            <atom>C15</atom>
+            <atom>C6</atom>
+            <atom>C3</atom>
+            <atom>N31</atom>
+            <atom>N30</atom>
+            <atom>C13</atom>
+            <atom>N34</atom>
+            <atom>C11</atom>
+            <atom>C8</atom>
+            <atom>C14</atom>
+            <atom>C12</atom>
+            <atom>O37</atom>
+            <atom>C28</atom>
+            <atom>N36</atom>
+            <atom>C29</atom>
+            <atom>C10</atom>
+            <atom>C19</atom>
+            <atom>C17</atom>
+            <atom>C18</atom>
+            <atom>O39</atom>
+            <atom>C16</atom>
+          </useless_atoms>
         </linker>
+
         <linker title="797">
             <warhead_align_atoms>
                 <atom>C13</atom>
