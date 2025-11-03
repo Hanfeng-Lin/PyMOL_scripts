@@ -1,1 +1,1 @@
-![README_autoProtac](./src/README_autoProtac.png)
+![README_autoProtac](./src/README_autoProtac.TIF)
